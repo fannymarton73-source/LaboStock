@@ -131,14 +131,14 @@ const $=id=>document.getElementById(id);
     message.textContent = 'Adresse e-mail ou mot de passe incorrect.';
     return;
   }
-   await migrateLocalProducts();
+  await loadCloudProducts();
   $('loginBox').style.display = 'none';
   $('appContent').style.display = 'block';
 };
 async function checkSession() {
   const { data } = await db.auth.getSession();
   if (data.session) {
-    await migrateLocalProducts();
+    await loadCloudProducts();
     $('loginBox').style.display = 'none';
     $('appContent').style.display = 'block';
   } else {
@@ -189,6 +189,33 @@ $('logoutButton').onclick = async () => {
 }
 const KEY='labostock-demo-v1';
 let items=JSON.parse(localStorage.getItem(KEY)||'[]'), history=JSON.parse(localStorage.getItem(KEY+'-history')||'[]');
+async function loadCloudProducts() {
+  const { data, error } = await db
+    .from('products')
+    .select('*');
+  if (error) {
+    console.error('Erreur chargement Supabase :', error);
+    return;
+  }
+  items = data.map(x => ({
+    id: x.id,
+    ref: x.ref,
+    name: x.name,
+    category: x.category,
+    maker: x.maker || '',
+    quantity: Number(x.quantity) || 0,
+    unit: x.unit || '',
+    threshold: Number(x.threshold) || 0,
+    location: x.location || '',
+    lot: x.lot || '',
+    expiryDate: x.expiry_date || '',
+    opened: x.opened || '',
+    manufacturerRef: x.manufacturer_ref || '',
+    sds: x.sds || '',
+    notes: x.notes || ''
+  }));
+  render();
+}
 const save=()=>{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+'-history',JSON.stringify(history));render()};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const code=()=> 'LAB-'+String(Date.now()).slice(-9);
