@@ -46,6 +46,7 @@ form{display:grid;gap:10px}.fields{display:grid;grid-template-columns:1fr 1fr;ga
   </button>
   <div id="loginError" style="margin-top:12px;color:#a33b35;"></div>
 </div>
+<div id="appContent"stlye="display:none;"
 <header><div><div class="brand">⚗ LaboStock</div><div class="sub">Prototype local — gestion du laboratoire</div></div><span class="sub">Version de démonstration</span></header>
 <main>
 <h1 style="margin:0;font-size:26px">Tableau de bord</h1>
@@ -103,6 +104,7 @@ form{display:grid;gap:10px}.fields{display:grid;grid-template-columns:1fr 1fr;ga
   <div id="labLot" style="font-size:10px"></div><div style="font-size:9px;margin-top:4px">Étiquette interne — conserver l'étiquetage réglementaire d'origine</div>
  </div>
 </div>
+</div>
 <script>
 const SUPABASE_URL='https://gmyvbllswpdvrcfnsbkf.supabase.co';
 const SUPABASE_KEY='sb_publishable_Vhiopkbscd_5Um3GvZepYg_BTQS-k-J';
@@ -127,7 +129,19 @@ const $=id=>document.getElementById(id);
     return;
   }
   $('loginBox').style.display = 'none';
+  $('appContent').style.display = 'block';
 };
+async function checkSession() {
+  const { data } = await db.auth.getSession();
+  if(data.session) {
+    $('loginBox').style.display = 'none'
+    $('appContent').style.display = 'block';
+  }else{
+    $('loginBox').style.display = "block";
+    $('appContent').style.display = "none";
+  }
+}
+  checkSession()
 const KEY='labostock-demo-v1';
 let items=JSON.parse(localStorage.getItem(KEY)||'[]'), history=JSON.parse(localStorage.getItem(KEY+'-history')||'[]');
 const save=()=>{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+'-history',JSON.stringify(history));render()};
