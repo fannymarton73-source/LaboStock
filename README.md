@@ -152,3 +152,5 @@ function label(id){let x=items.find(i=>i.id===id);$('labName').textContent=x.nam
 $('search').addEventListener('input',render);$('filter').addEventListener('change',render);render();
 </script>
 </body></html>
+
+<!-- redeploy Github Pages --!>
