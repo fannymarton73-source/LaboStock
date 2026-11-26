@@ -269,7 +269,7 @@ async function move(id) {
   );
   if (v === null) return;
   let n = Number(v);
-  if (!Number.isFinite(n) || n || x.quantity + n < 0) {
+  if (!Number.isFinite(n) || x.quantity + n < 0) {
     alert('Variation invalide : le stock ne peut pas être négatif.');
     return;
   }
