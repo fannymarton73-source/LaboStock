@@ -216,7 +216,35 @@ async function loadCloudProducts() {
   }));
   render();
 }
-const save=()=>{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+'-history',JSON.stringify(history));render()};
+async function save() {
+  const products = items.map(x => ({
+    id: x.id,
+    ref: x.ref,
+    name: x.name,
+    category: x.category,
+    maker: x.maker || null,
+    quantity: Number(x.quantity) || 0,
+    unit: x.unit || null,
+    threshold: Number(x.threshold) || 0,
+    location: x.location || null,
+    lot: x.lot || null,
+    expiry_date: x.expiryDate || null,
+    opened: x.opened || null,
+    manufacturer_ref: x.manufacturerRef || null,
+    sds: x.sds || null,
+    notes: x.notes || null,
+    updated_at: new Date().toISOString()
+  }));
+  const { error } = await db
+    .from('products')
+    .upsert(products);
+  if (error) {
+    console.error('Erreur sauvegarde Supabase :', error);
+    alert("Erreur : la modification n'a pas pu être enregistrée.");
+    return;
+  }
+  render();
+}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const code=()=> 'LAB-'+String(Date.now()).slice(-9);
 function state(x){if(x.quantity<=x.threshold)return ['Stock faible','warn'];if(x.expiryDate){let d=(new Date(x.expiryDate+'T00:00:00')-new Date())/86400000;if(d<0)return ['Périmé','bad'];if(d<=90)return ['Expire bientôt','warn']}return ['OK','ok']}
