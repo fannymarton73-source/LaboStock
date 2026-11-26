@@ -262,7 +262,43 @@ function newProduct(){resetForm();$('name').focus()}
 function resetForm(){$('productForm').reset();$('pid').value='';$('quantity').value=1;$('threshold').value=0;$('formTitle').textContent='Nouvel article'}
 function edit(id){let x=items.find(i=>i.id===id);if(!x)return;for(let k of ['id','name','category','maker','quantity','unit','threshold','location','lot','expiryDate','opened','manufacturerRef','sds','notes'])$(k==='id'?'pid':k).value=x[k]??'';$('formTitle').textContent='Modifier un article';window.scrollTo({top:0,behavior:'smooth'})}
 $('productForm').addEventListener('submit',e=>{e.preventDefault();let id=$('pid').value,old=items.find(x=>x.id===id);let x={id:id||crypto.randomUUID(),ref:old?.ref||code(),name:$('name').value.trim(),category:$('category').value,maker:$('maker').value,quantity:+$('quantity').value,unit:$('unit').value,threshold:+$('threshold').value,location:$('location').value,lot:$('lot').value,expiryDate:$('expiryDate').value,opened:$('opened').value,manufacturerRef:$('manufacturerRef').value,sds:$('sds').value,notes:$('notes').value};if(old){let delta=x.quantity-old.quantity;if(delta)history.unshift({name:x.name,action:delta>0?'ajout':'retrait',amount:Math.abs(delta),unit:x.unit,date:new Date().toISOString()});items=items.map(i=>i.id===id?x:i)}else{items.unshift(x);history.unshift({name:x.name,action:'création',amount:x.quantity,unit:x.unit,date:new Date().toISOString()})}save();resetForm();$('notice').textContent='Article enregistré dans cette démonstration.'});
-function move(id){let x=items.find(i=>i.id===id),v=prompt('Variation de stock pour '+x.name+' (ex. 3 ou -2)');if(v===null)return;let n=Number(v);if(!Number.isFinite(n)||!n||x.quantity+n<0){alert('Variation invalide : le stock ne peut pas être négatif.');return}x.quantity+=n;history.unshift({name:x.name,action:n>0?'entrée':'sortie',amount:Math.abs(n),unit:x.unit,date:new Date().toISOString()});save()}
+async function move(id) {
+  let x = items.find(i => i.id === id);
+  let v = prompt(
+    'Variation de stock pour ' + x.name + ' (ex. 3 ou -2)'
+  );
+  if (v === null) return;
+  let n = Number(v);
+  if (!Number.isFinite(n) || n || x.quantity + n < 0) {
+    alert('Variation invalide : le stock ne peut pas être négatif.');
+    return;
+  }
+  x.quantity += n;
+  const movement = {
+    product_id: x.id,
+    product_name: x.name,
+    action: n > 0 ? 'entrée' : 'sortie',
+    amount: Math.abs(n),
+    unit: x.unit || null,
+    movement_date: new Date().toISOString()
+  };
+  const { error } = await db
+    .from('stock_history')
+    .insert([movement]);
+  if (error) {
+    console.error('Erreur historique Supabase :', error);
+    alert("Le mouvement n'a pas pu être enregistré.");
+    return;
+  }
+  history.unshift({
+    name: x.name,
+    action: movement.action,
+    amount: movement.amount,
+    unit: x.unit,
+    date: movement.movement_date
+  });
+  await save();
+}
 function label(id){let x=items.find(i=>i.id===id);$('labName').textContent=x.name;$('labRef').textContent='Réf. interne : '+x.ref;$('labCode').textContent=x.ref;$('labLot').textContent='Lot : '+(x.lot||'—')+' | Péremption : '+(x.expiryDate||'—');$('labelPrint').style.display='block';if(window.JsBarcode)JsBarcode('#barcode',x.ref,{format:'CODE128',width:1.5,height:38,displayValue:false,margin:2});else $('barcode').outerHTML='<p>Bibliothèque code-barres indisponible</p>';window.print();$('labelPrint').style.display='none'}
 $('search').addEventListener('input',render);$('filter').addEventListener('change',render);render();
 </script>
