@@ -28,8 +28,24 @@ form{display:grid;gap:10px}.fields{display:grid;grid-template-columns:1fr 1fr;ga
 @media print{body *{visibility:hidden}#labelPrint,#labelPrint *{visibility:visible}#labelPrint{position:absolute;left:0;top:0;width:100%}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">\</script>
 </head>
 <body>
+<div id="loginBox" class="card" style="max-width:400px;margin:40px auto;padding:24px;">
+  <h2>Connexion à LaboStock</h2>
+  <div class="field">
+    <label for="loginEmail">Adresse e-mail</label>
+    <input id="loginEmail" type="email" placeholder="Votre adresse e-mail">
+  </div>
+  <div class="field" style="margin-top:12px;">
+    <label for="loginPassword">Mot de passe</label>
+    <input id="loginPassword" type="password" placeholder="Votre mot de passe">
+  </div>
+  <button type="button" id="loginButton" style="margin-top:16px;">
+    Se connecter
+  </button>
+  <div id="loginError" style="margin-top:12px;color:#a33b35;"></div>
+</div>
 <header><div><div class="brand">⚗ LaboStock</div><div class="sub">Prototype local — gestion du laboratoire</div></div><span class="sub">Version de démonstration</span></header>
 <main>
 <h1 style="margin:0;font-size:26px">Tableau de bord</h1>
@@ -88,9 +104,31 @@ form{display:grid;gap:10px}.fields{display:grid;grid-template-columns:1fr 1fr;ga
  </div>
 </div>
 <script>
+const SUPABASE_URL='https://gmyvbllswpdvrcfnsbkf.supabase.co';
+const SUPABASE_KEY='sb_publishable_Vhiopkbscd_5Um3GvZepYg_BTQS-k-J';
+const db = window.supabse.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+ $('loginButton').onclick = async () => {
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  const message = $('loginError');
+  message.textContent = '';
+ if (!email || !password) {
+    message.textContent = 'Entre ton adresse e-mail et ton mot de passe.';
+    return;
+  }
+  const { error } = await db.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+  if (error) {
+    message.textContent = 'Adresse e-mail ou mot de passe incorrect.';
+    return;
+  }
+  $('loginBox').style.display = 'none';
+};
 const KEY='labostock-demo-v1';
 let items=JSON.parse(localStorage.getItem(KEY)||'[]'), history=JSON.parse(localStorage.getItem(KEY+'-history')||'[]');
-const $=id=>document.getElementById(id);
 const save=()=>{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+'-history',JSON.stringify(history));render()};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const code=()=> 'LAB-'+String(Date.now()).slice(-9);
