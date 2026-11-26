@@ -46,8 +46,11 @@ form{display:grid;gap:10px}.fields{display:grid;grid-template-columns:1fr 1fr;ga
   </button>
   <div id="loginError" style="margin-top:12px;color:#a33b35;"></div>
 </div>
-<div id="appContent"stlye="display:none;"
-<header><div><div class="brand">⚗ LaboStock</div><div class="sub">Prototype local — gestion du laboratoire</div></div><span class="sub">Version de démonstration</span></header>
+<div id="appContent"stlye="display:none;">
+  <div style="texte-align:right;padding:10px20px;">
+    <button type="button"id="logoutButton">Se déconnecter</button>
+  </div>
+  <header><div><div class="brand">⚗ LaboStock</div><div class="sub">Prototype local — gestion du laboratoire</div></div><span class="sub">Version de démonstration</span></header>
 <main>
 <h1 style="margin:0;font-size:26px">Tableau de bord</h1>
 <p class="muted">Catalogue, lots, mouvements et dates de péremption. Les données de cette démonstration restent dans ce navigateur.</p>
@@ -142,6 +145,16 @@ async function checkSession() {
   }
 }
   checkSession()
+  $('logoutButton').onclick = async () => {
+    const { error } = await db.auth.signOut({ scope: 'local' });
+    if (error)
+      alert('Impossible de se déconnecter.');
+    return;
+  }
+  $('appContent').style.display = 'none';
+  $('loginBox').style.display = 'block';
+  $('loginPassword').value = '';
+  };
 const KEY='labostock-demo-v1';
 let items=JSON.parse(localStorage.getItem(KEY)||'[]'), history=JSON.parse(localStorage.getItem(KEY+'-history')||'[]');
 const save=()=>{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+'-history',JSON.stringify(history));render()};
