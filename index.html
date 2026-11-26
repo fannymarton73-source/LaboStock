@@ -132,6 +132,7 @@ const $=id=>document.getElementById(id);
     return;
   }
   await loadCloudProducts();
+  await loadCloudHistory();
   $('loginBox').style.display = 'none';
   $('appContent').style.display = 'block';
 };
@@ -139,6 +140,7 @@ async function checkSession() {
   const { data } = await db.auth.getSession();
   if (data.session) {
     await loadCloudProducts();
+    await loadCloudHistory();
     $('loginBox').style.display = 'none';
     $('appContent').style.display = 'block';
   } else {
@@ -213,6 +215,24 @@ async function loadCloudProducts() {
     manufacturerRef: x.manufacturer_ref || '',
     sds: x.sds || '',
     notes: x.notes || ''
+  }));
+  render();
+}
+async function loadCloudHistory() {
+  const { data, error } = await db
+    .from('stock_history')
+    .select('*')
+    .order('movement_date', { ascending: false });
+  if (error) {
+    console.error('Erreur chargement historique Supabase :', error);
+    return;
+  }
+  history = data.map(x => ({
+    name: x.product_name,
+    action: x.action,
+    amount: Number(x.amount) || 0,
+    unit: x.unit || '',
+    date: x.movement_date
   }));
   render();
 }
