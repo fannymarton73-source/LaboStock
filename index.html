@@ -136,25 +136,25 @@ const $=id=>document.getElementById(id);
 };
 async function checkSession() {
   const { data } = await db.auth.getSession();
-  if(data.session) {
-    $('loginBox').style.display = 'none'
+  if (data.session) {
+    $('loginBox').style.display = 'none';
     $('appContent').style.display = 'block';
-  }else{
-    $('loginBox').style.display = "block";
-    $('appContent').style.display = "none";
+  } else {
+    $('loginBox').style.display = 'block';
+    $('appContent').style.display = 'none';
   }
 }
-  checkSession()
-  $('logoutButton').onclick = async () => {
-    const { error } = await db.auth.signOut({ scope: 'local' });
-    if (error) {
-      alert('Impossible de se déconnecter.');
+checkSession();
+$('logoutButton').onclick = async () => {
+  const { error } = await db.auth.signOut({ scope: 'local' });
+  if (error) {
+    alert('Impossible de se déconnecter.');
     return;
   }
   $('appContent').style.display = 'none';
   $('loginBox').style.display = 'block';
   $('loginPassword').value = '';
-  };
+};
 const KEY='labostock-demo-v1';
 let items=JSON.parse(localStorage.getItem(KEY)||'[]'), history=JSON.parse(localStorage.getItem(KEY+'-history')||'[]');
 const save=()=>{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+'-history',JSON.stringify(history));render()};
