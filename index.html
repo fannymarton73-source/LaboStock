@@ -147,7 +147,7 @@ async function checkSession() {
   checkSession()
   $('logoutButton').onclick = async () => {
     const { error } = await db.auth.signOut({ scope: 'local' });
-    if (error)
+    if (error) {
       alert('Impossible de se déconnecter.');
     return;
   }
