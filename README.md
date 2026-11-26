@@ -1,27 +1,116 @@
-# LaboStock
 <!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-
-    <meta name="theme-color" content="#173b32" />
-
-    <meta
-      name="description"
-      content="LaboStock — gestion des stocks de laboratoire"
-    />
-
-    <title>LaboStock</title>
-  </head>
-
-  <body>
-    <div id="root"></div>
-
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LaboStock — Prototype</title>
+<style>
+:root{--ink:#172b3a;--muted:#607381;--line:#dce5e9;--bg:#f4f7f8;--blue:#176b87;--pale:#eaf3f6;--red:#a33b35;--green:#26734d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:#123e52;color:white;padding:18px clamp(16px,4vw,42px);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-size:22px;font-weight:750;letter-spacing:.2px}.sub{font-size:12px;color:#c6dce5}
+main{max-width:1250px;margin:auto;padding:24px clamp(12px,3vw,32px)}
+.toolbar,.stats,.layout{display:grid;gap:14px}.stats{grid-template-columns:repeat(4,1fr);margin:16px 0}
+.card{background:white;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 8px #163a4a0a}
+.stat strong{font-size:27px;display:block}.stat span,.muted{color:var(--muted);font-size:13px}
+.toolbar{grid-template-columns:1fr auto auto;align-items:center}
+input,select,textarea{font:inherit;border:1px solid #cbd8de;border-radius:9px;padding:10px;background:white;color:var(--ink);width:100%}
+button{font:600 14px system-ui;border:0;border-radius:9px;padding:10px 14px;background:var(--blue);color:white;cursor:pointer}
+button.secondary{background:var(--pale);color:var(--blue)}button.danger{background:#fae9e7;color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);vertical-align:middle}th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.pill{display:inline-block;border-radius:30px;padding:3px 8px;font-size:12px;background:#edf2f4}.pill.ok{background:#e5f4eb;color:var(--green)}.pill.warn{background:#fff2d9;color:#8b5a08}.pill.bad{background:#fae9e7;color:var(--red)}
+.layout{grid-template-columns:minmax(0,1fr) 330px;margin-top:16px}
+form{display:grid;gap:10px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+.field.full{grid-column:1/-1}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.empty{text-align:center;padding:30px;color:var(--muted)}
+#notice{margin:12px 0;color:var(--green);font-size:13px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.toolbar{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}table{font-size:12px}th,td{padding:8px 5px}.hide-mobile{display:none}}
+@media print{body *{visibility:hidden}#labelPrint,#labelPrint *{visibility:visible}#labelPrint{position:absolute;left:0;top:0;width:100%}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+<header><div><div class="brand">⚗ LaboStock</div><div class="sub">Prototype local — gestion du laboratoire</div></div><span class="sub">Version de démonstration</span></header>
+<main>
+<h1 style="margin:0;font-size:26px">Tableau de bord</h1>
+<p class="muted">Catalogue, lots, mouvements et dates de péremption. Les données de cette démonstration restent dans ce navigateur.</p>
+<div class="stats">
+ <div class="card stat"><strong id="total">0</strong><span>Références</span></div>
+ <div class="card stat"><strong id="qty">0</strong><span>Unités / contenants en stock</span></div>
+ <div class="card stat"><strong id="low">0</strong><span>Stocks faibles</span></div>
+ <div class="card stat"><strong id="expiry">0</strong><span>Périmés ou bientôt périmés</span></div>
+</div>
+<div class="toolbar">
+ <input id="search" placeholder="Rechercher un produit, une référence, un lot…">
+ <select id="filter"><option value="">Toutes les catégories</option><option>Réactifs et produits chimiques</option><option>Consommables de laboratoire</option><option>Matériel et équipements</option><option>Verrerie et petits instruments</option><option>Échantillons</option></select>
+ <button onclick="newProduct()">＋ Ajouter un article</button>
+</div>
+<div class="layout">
+ <section class="card">
+  <h2 style="font-size:18px;margin:0 0 8px">Inventaire</h2>
+  <div style="overflow:auto"><table><thead><tr><th>Article</th><th>Catégorie</th><th>Stock</th><th class="hide-mobile">Emplacement</th><th>État</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+  <div id="empty" class="empty">Aucun article enregistré. Ajoutez votre premier produit pour commencer.</div>
+ </section>
+ <aside class="card">
+  <h2 id="formTitle" style="font-size:18px;margin:0 0 12px">Nouvel article</h2>
+  <form id="productForm">
+   <input type="hidden" id="pid">
+   <div class="field"><label>Nom *</label><input id="name" required placeholder="Ex. Éthanol 96 %"></div>
+   <div class="fields">
+    <div class="field"><label>Catégorie *</label><select id="category" required><option>Réactifs et produits chimiques</option><option>Consommables de laboratoire</option><option>Matériel et équipements</option><option>Verrerie et petits instruments</option><option>Échantillons</option></select></div>
+    <div class="field"><label>Fabricant</label><input id="maker" placeholder="Fabricant"></div>
+    <div class="field"><label>Quantité *</label><input id="quantity" type="number" min="0" step="any" value="1" required></div>
+    <div class="field"><label>Unité</label><input id="unit" placeholder="flacon, boîte, pièce, L…"></div>
+    <div class="field"><label>Seuil d'alerte</label><input id="threshold" type="number" min="0" step="any" value="0"></div>
+    <div class="field"><label>Emplacement</label><input id="location" placeholder="Armoire A / étagère 2"></div>
+    <div class="field"><label>Numéro de lot</label><input id="lot" placeholder="N° de lot"></div>
+    <div class="field"><label>Date de péremption</label><input id="expiryDate" type="date"></div>
+    <div class="field"><label>Date d'ouverture</label><input id="opened" type="date"></div>
+    <div class="field"><label>Référence fabricant</label><input id="manufacturerRef"></div>
+    <div class="field full"><label>Lien vers la FDS (PDF ou espace documentaire)</label><input id="sds" type="url" placeholder="https://…"></div>
+    <div class="field full"><label>Notes</label><textarea id="notes" rows="2" placeholder="Informations complémentaires"></textarea></div>
+   </div>
+   <div class="actions"><button type="submit">Enregistrer</button><button type="button" class="secondary" onclick="resetForm()">Effacer</button></div>
+  </form>
+  <div id="notice"></div>
+ </aside>
+</div>
+<section class="card" style="margin-top:16px">
+ <h2 style="font-size:18px;margin:0 0 8px">Historique des mouvements</h2>
+ <div id="history" class="muted">Aucun mouvement enregistré.</div>
+</section>
+</main>
+<div id="labelPrint" style="display:none;padding:12px">
+ <div style="border:1px solid #222;padding:10px;width:75mm;min-height:35mm;color:#111;font:12px Arial">
+  <b id="labName"></b><div id="labRef" style="font-size:10px"></div>
+  <svg id="barcode"></svg><div id="labCode" style="font-size:10px;text-align:center"></div>
+  <div id="labLot" style="font-size:10px"></div><div style="font-size:9px;margin-top:4px">Étiquette interne — conserver l'étiquetage réglementaire d'origine</div>
+ </div>
+</div>
+<script>
+const KEY='labostock-demo-v1';
+let items=JSON.parse(localStorage.getItem(KEY)||'[]'), history=JSON.parse(localStorage.getItem(KEY+'-history')||'[]');
+const $=id=>document.getElementById(id);
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+'-history',JSON.stringify(history));render()};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const code=()=> 'LAB-'+String(Date.now()).slice(-9);
+function state(x){if(x.quantity<=x.threshold)return ['Stock faible','warn'];if(x.expiryDate){let d=(new Date(x.expiryDate+'T00:00:00')-new Date())/86400000;if(d<0)return ['Périmé','bad'];if(d<=90)return ['Expire bientôt','warn']}return ['OK','ok']}
+function render(){
+ $('total').textContent=items.length;$('qty').textContent=items.reduce((a,x)=>a+(+x.quantity||0),0);
+ $('low').textContent=items.filter(x=>x.quantity<=x.threshold).length;
+ $('expiry').textContent=items.filter(x=>x.expiryDate&&((new Date(x.expiryDate+'T00:00:00')-new Date())/86400000<=90)).length;
+ let q=$('search').value.toLowerCase(),cat=$('filter').value;
+ let list=items.filter(x=>(!cat||x.category===cat)&&[x.name,x.ref,x.lot,x.location].join(' ').toLowerCase().includes(q));
+ $('rows').innerHTML=list.map(x=>{let s=state(x);return `<tr><td><b>${esc(x.name)}</b><div class="muted">${esc(x.ref)} · ${esc(x.lot||'Sans lot')}</div></td><td>${esc(x.category)}</td><td>${esc(x.quantity)} ${esc(x.unit)}</td><td class="hide-mobile">${esc(x.location)}</td><td><span class="pill ${s[1]}">${s[0]}</span></td><td><div class="actions"><button class="secondary" onclick="edit('${x.id}')">Modifier</button><button class="secondary" onclick="move('${x.id}')">± Stock</button><button class="secondary" onclick="label('${x.id}')">Étiquette</button></div></td></tr>`}).join('');
+ $('empty').style.display=list.length?'none':'block';
+ $('history').innerHTML=history.length?history.slice(0,12).map(h=>`<div style="padding:7px 0;border-bottom:1px solid var(--line)"><b>${esc(h.name)}</b> — ${esc(h.action)} ${esc(h.amount)} ${esc(h.unit)} <span class="muted">· ${new Date(h.date).toLocaleString('fr-FR')}</span></div>`).join(''):'Aucun mouvement enregistré.';
+}
+function newProduct(){resetForm();$('name').focus()}
+function resetForm(){$('productForm').reset();$('pid').value='';$('quantity').value=1;$('threshold').value=0;$('formTitle').textContent='Nouvel article'}
+function edit(id){let x=items.find(i=>i.id===id);if(!x)return;for(let k of ['id','name','category','maker','quantity','unit','threshold','location','lot','expiryDate','opened','manufacturerRef','sds','notes'])$(k==='id'?'pid':k).value=x[k]??'';$('formTitle').textContent='Modifier un article';window.scrollTo({top:0,behavior:'smooth'})}
+$('productForm').addEventListener('submit',e=>{e.preventDefault();let id=$('pid').value,old=items.find(x=>x.id===id);let x={id:id||crypto.randomUUID(),ref:old?.ref||code(),name:$('name').value.trim(),category:$('category').value,maker:$('maker').value,quantity:+$('quantity').value,unit:$('unit').value,threshold:+$('threshold').value,location:$('location').value,lot:$('lot').value,expiryDate:$('expiryDate').value,opened:$('opened').value,manufacturerRef:$('manufacturerRef').value,sds:$('sds').value,notes:$('notes').value};if(old){let delta=x.quantity-old.quantity;if(delta)history.unshift({name:x.name,action:delta>0?'ajout':'retrait',amount:Math.abs(delta),unit:x.unit,date:new Date().toISOString()});items=items.map(i=>i.id===id?x:i)}else{items.unshift(x);history.unshift({name:x.name,action:'création',amount:x.quantity,unit:x.unit,date:new Date().toISOString()})}save();resetForm();$('notice').textContent='Article enregistré dans cette démonstration.'});
+function move(id){let x=items.find(i=>i.id===id),v=prompt('Variation de stock pour '+x.name+' (ex. 3 ou -2)');if(v===null)return;let n=Number(v);if(!Number.isFinite(n)||!n||x.quantity+n<0){alert('Variation invalide : le stock ne peut pas être négatif.');return}x.quantity+=n;history.unshift({name:x.name,action:n>0?'entrée':'sortie',amount:Math.abs(n),unit:x.unit,date:new Date().toISOString()});save()}
+function label(id){let x=items.find(i=>i.id===id);$('labName').textContent=x.name;$('labRef').textContent='Réf. interne : '+x.ref;$('labCode').textContent=x.ref;$('labLot').textContent='Lot : '+(x.lot||'—')+' | Péremption : '+(x.expiryDate||'—');$('labelPrint').style.display='block';if(window.JsBarcode)JsBarcode('#barcode',x.ref,{format:'CODE128',width:1.5,height:38,displayValue:false,margin:2});else $('barcode').outerHTML='<p>Bibliothèque code-barres indisponible</p>';window.print();$('labelPrint').style.display='none'}
+$('search').addEventListener('input',render);$('filter').addEventListener('change',render);render();
+</script>
+</body></html>
